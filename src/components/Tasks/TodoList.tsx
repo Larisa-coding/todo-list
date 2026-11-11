@@ -167,51 +167,53 @@ export const TodoList: React.FC<TodoListProps> = ({
         </div>
       </section>
 
-      {/* ── Форма добавления ── */}
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-        <label className="sr-only" htmlFor="new-task">{t('addPlaceholder')}</label>
-        <div className="relative flex-1">
-          <input
-            id="new-task"
-            ref={inputRef}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t('addPlaceholder')}
-            maxLength={MAX_LENGTH}
-            className="w-full px-4 py-3 rounded-xl outline-none font-accent pr-16 transition-colors duration-200"
-            style={{
-              backgroundColor: 'var(--surface-input)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-input)',
-            }}
-          />
-          {title.length > 0 && (
-            <div
-              className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <span className="text-xs tabular-nums font-accent">
-                {title.length}/{MAX_LENGTH}
-              </span>
-              <button
-                type="button"
-                onClick={() => { setTitle(''); inputRef.current?.focus(); }}
-                aria-label="Очистить поле"
-                className="p-0.5 rounded transition-opacity hover:opacity-80"
+      {/* ── Форма добавления — только на вкладке "Все" ── */}
+      {filter === 'all' && (
+        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+          <label className="sr-only" htmlFor="new-task">{t('addPlaceholder')}</label>
+          <div className="relative flex-1">
+            <input
+              id="new-task"
+              ref={inputRef}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t('addPlaceholder')}
+              maxLength={MAX_LENGTH}
+              className="w-full px-4 py-3 rounded-xl outline-none font-accent pr-16 transition-colors duration-200"
+              style={{
+                backgroundColor: 'var(--surface-input)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-input)',
+              }}
+            />
+            {title.length > 0 && (
+              <div
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5"
+                style={{ color: 'var(--text-muted)' }}
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-        </div>
-        <button
-          type="submit"
-          className="btn-primary inline-flex items-center justify-center gap-2 rounded-xl shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          {t('add')}
-        </button>
-      </form>
+                <span className="text-xs tabular-nums font-accent">
+                  {title.length}/{MAX_LENGTH}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setTitle(''); inputRef.current?.focus(); }}
+                  aria-label="Очистить поле"
+                  className="p-0.5 rounded transition-opacity hover:opacity-80"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+          <button
+            type="submit"
+            className="btn-primary inline-flex items-center justify-center gap-2 rounded-xl shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            {t('add')}
+          </button>
+        </form>
+      )}
 
       {/* ── Список задач ── */}
       {visible.length === 0 ? (
@@ -332,14 +334,33 @@ export const TodoList: React.FC<TodoListProps> = ({
       )}
 
       {/* ── Убрать выполненные / Отменить ── */}
-      {completedCount > 0 && (
+      {(completedCount > 0 || undoItems) && (
         <div className="flex justify-end items-center gap-3">
           {undoItems ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-accent" style={{ color: 'var(--text-muted)' }}>
-                {undoSeconds}s
-              </span>
-              <button type="button" onClick={handleUndo} className="btn-undo text-sm">
+            <div className="flex items-center gap-3 animate-fade-in">
+              {/* Прогресс-полоска таймера */}
+              <div className="flex items-center gap-2">
+                <div
+                  className="h-1 rounded-full overflow-hidden"
+                  style={{ width: 36, backgroundColor: 'var(--border)' }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-1000 ease-linear"
+                    style={{
+                      width: `${(undoSeconds / UNDO_SECONDS) * 100}%`,
+                      backgroundColor: 'var(--text-muted)',
+                    }}
+                  />
+                </div>
+                <span className="text-xs tabular-nums font-accent" style={{ color: 'var(--text-muted)' }}>
+                  {undoSeconds}s
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleUndo}
+                className="btn-secondary text-sm inline-flex items-center gap-1.5"
+              >
                 ↩ {t('undoClear')}
               </button>
             </div>
