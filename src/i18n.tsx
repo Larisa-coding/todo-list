@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type Lang = 'ru' | 'en';
 
@@ -107,16 +107,18 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [lang, setLangState] = useState<Lang>(readLang);
   const [theme, setThemeState] = useState<Theme>(readTheme);
 
-  const setLang = (next: Lang) => {
+  const setLang = useCallback((next: Lang) => {
     setLangState(next);
     try { localStorage.setItem(LANG_KEY, next); } catch {}
-  };
+  }, []);
 
-  const toggleTheme = () => {
-    const next: Theme = theme === 'dark' ? 'light' : 'dark';
-    setThemeState(next);
-    try { localStorage.setItem(THEME_KEY, next); } catch {}
-  };
+  const toggleTheme = useCallback(() => {
+    setThemeState((prev) => {
+      const next: Theme = prev === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem(THEME_KEY, next); } catch {}
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -129,8 +131,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const value = useMemo<LanguageContextValue>(
     () => ({ lang, setLang, t: (key) => STRINGS[lang][key], theme, toggleTheme }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lang, theme]
+    [lang, setLang, theme, toggleTheme]
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

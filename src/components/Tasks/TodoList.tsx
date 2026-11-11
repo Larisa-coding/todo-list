@@ -36,7 +36,7 @@ export const TodoList: React.FC<TodoListProps> = ({
   const [editingValue, setEditingValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Отмена удаления
+  // Undo clear
   const [undoItems, setUndoItems] = useState<Todo[] | null>(null);
   const [undoSeconds, setUndoSeconds] = useState(0);
   const undoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -52,7 +52,7 @@ export const TodoList: React.FC<TodoListProps> = ({
     return () => clearUndoTimer();
   }, []);
 
-  // Сортировка: срочные вверх, потом по дате создания
+  // Sort: urgent first, then by creation date
   const sorted = [...todos].sort((a, b) => {
     if (a.urgent && !b.urgent) return -1;
     if (!a.urgent && b.urgent) return 1;
@@ -109,7 +109,7 @@ export const TodoList: React.FC<TodoListProps> = ({
     setUndoSeconds(0);
   };
 
-  // Редактирование
+  // Edit task
   const startEditing = (todo: Todo) => {
     setEditingId(todo.id);
     setEditingValue(todo.title);
