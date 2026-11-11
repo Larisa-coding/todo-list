@@ -2,109 +2,180 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Подключаем Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Nunito:wght@400;600;700;800&family=Comfortaa:wght@500;700&family=Poppins:wght@500;600;700&display=swap');
 
+/* ─── Тёмная тема (по умолчанию) ─── */
+:root,
+[data-theme='dark'] {
+  --bg-gradient: linear-gradient(to bottom right, #1a1d1f, #292d2f, #1f2224);
+  --surface: rgba(41, 45, 47, 0.78);
+  --surface-solid: rgba(41, 45, 47, 0.95);
+  --surface-input: rgba(26, 29, 31, 0.72);
+  --border: rgba(120, 120, 120, 0.3);
+  --border-hover: rgba(140, 140, 140, 0.4);
+  --text-primary: #d8d8d8;
+  --text-secondary: #b0b0b0;
+  --text-muted: #8d8d8d;
+  --text-done: #8a8a8a;
+  --text-input: #ececec;
+  --brand-color: #c0c0c0;
+  --progress-bar: #b7b7b7;
+  --btn-bg: rgba(41, 45, 47, 0.9);
+  --btn-bg-hover: rgba(50, 55, 57, 0.9);
+  --btn-color: #c0c0c0;
+  --btn-color-hover: #d0d0d0;
+  --btn-icon-bg: rgba(41, 45, 47, 0.5);
+  --active-nav-bg: rgba(80, 80, 80, 0.3);
+  --active-nav-border: #c0c0c0;
+  --pill-bg: rgba(20, 22, 24, 0.45);
+  --pill-color: #c0c0c0;
+  --progress-track: rgba(20, 22, 24, 0.55);
+  --check-bg: rgba(192, 192, 192, 0.22);
+  --danger-border: rgba(120, 100, 100, 0.4);
+  --danger-color: #c08080;
+  --danger-color-hover: #d09090;
+  --danger-border-hover: rgba(140, 110, 110, 0.5);
+  --urgent-color: #e07070;
+  --urgent-bg: rgba(200, 80, 80, 0.12);
+  --undo-color: #80b0d0;
+  --undo-border: rgba(100, 140, 180, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+/* ─── Светлая тема ─── */
+[data-theme='light'] {
+  --bg-gradient: linear-gradient(to bottom right, #f0f4f8, #e8edf2, #f5f7fa);
+  --surface: rgba(255, 255, 255, 0.85);
+  --surface-solid: rgba(255, 255, 255, 0.98);
+  --surface-input: rgba(255, 255, 255, 0.9);
+  --border: rgba(180, 190, 200, 0.5);
+  --border-hover: rgba(140, 160, 180, 0.6);
+  --text-primary: #2d3748;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --text-done: #a0aec0;
+  --text-input: #2d3748;
+  --brand-color: #4a5568;
+  --progress-bar: #667eea;
+  --btn-bg: rgba(255, 255, 255, 0.9);
+  --btn-bg-hover: rgba(240, 244, 248, 0.95);
+  --btn-color: #4a5568;
+  --btn-color-hover: #2d3748;
+  --btn-icon-bg: rgba(240, 244, 248, 0.8);
+  --active-nav-bg: rgba(102, 126, 234, 0.1);
+  --active-nav-border: #667eea;
+  --pill-bg: rgba(102, 126, 234, 0.1);
+  --pill-color: #667eea;
+  --progress-track: rgba(180, 190, 210, 0.3);
+  --check-bg: rgba(102, 126, 234, 0.15);
+  --danger-border: rgba(220, 150, 150, 0.5);
+  --danger-color: #c05050;
+  --danger-color-hover: #a03030;
+  --danger-border-hover: rgba(200, 120, 120, 0.6);
+  --urgent-color: #c0392b;
+  --urgent-bg: rgba(220, 80, 60, 0.08);
+  --undo-color: #2b6cb0;
+  --undo-border: rgba(66, 153, 225, 0.4);
+  --shadow-sm: 0 2px 8px rgba(100,120,150,0.12);
+}
+
 @layer components {
-  /* Главная кнопка - темно-графитовая с glassmorphism */
   .btn-primary {
     @apply px-4 py-2 rounded-lg border text-sm font-medium 
            transition-all duration-300 hover:scale-105 
            backdrop-blur-sm shadow-lg hover:shadow-xl;
-    background-color: rgba(41, 45, 47, 0.9);
-    border-color: rgba(120, 120, 120, 0.3);
-    color: #c0c0c0;
+    background-color: var(--btn-bg);
+    border-color: var(--border);
+    color: var(--btn-color);
   }
-  
   .btn-primary:hover {
-    background-color: rgba(50, 55, 57, 0.9);
-    border-color: rgba(140, 140, 140, 0.4);
-    color: #d0d0d0;
+    background-color: var(--btn-bg-hover);
+    border-color: var(--border-hover);
+    color: var(--btn-color-hover);
   }
 
-  /* Вторичная кнопка */
   .btn-secondary {
     @apply px-4 py-2 rounded-lg border font-medium 
-           transition-all duration-300 hover:scale-105 
-           backdrop-blur-sm;
-    background-color: rgba(41, 45, 47, 0.5);
-    border-color: rgba(100, 100, 100, 0.25);
-    color: #b0b0b0;
+           transition-all duration-300 hover:scale-105 backdrop-blur-sm;
+    background-color: var(--btn-icon-bg);
+    border-color: var(--border);
+    color: var(--text-secondary);
   }
-  
   .btn-secondary:hover {
-    background-color: rgba(50, 55, 57, 0.5);
-    border-color: rgba(120, 120, 120, 0.35);
-    color: #c0c0c0;
+    background-color: var(--btn-bg-hover);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
   }
 
-  /* Маленькая кнопка */
-  .btn-sm {
-    @apply px-3 py-1.5 rounded-lg border text-sm font-medium 
-           transition-all duration-300 hover:scale-105 
-           backdrop-blur-sm;
-    background-color: rgba(41, 45, 47, 0.5);
-    border-color: rgba(120, 120, 120, 0.3);
-    color: #c0c0c0;
-  }
-  
-  .btn-sm:hover {
-    background-color: rgba(50, 55, 57, 0.5);
-    border-color: rgba(140, 140, 140, 0.4);
-    color: #d0d0d0;
-  }
-
-  /* Кнопка с иконкой */
   .btn-icon {
-    @apply p-2 rounded-lg border 
-           transition-all duration-300 hover:scale-110 
-           backdrop-blur-sm;
-    background-color: rgba(41, 45, 47, 0.5);
-    border-color: rgba(120, 120, 120, 0.3);
-    color: #b0b0b0;
+    @apply p-2 rounded-lg border transition-all duration-300 hover:scale-110 backdrop-blur-sm;
+    background-color: var(--btn-icon-bg);
+    border-color: var(--border);
+    color: var(--text-secondary);
   }
-  
   .btn-icon:hover {
-    background-color: rgba(50, 55, 57, 0.5);
-    border-color: rgba(140, 140, 140, 0.4);
-    color: #c0c0c0;
+    background-color: var(--btn-bg-hover);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
   }
 
-  /* Опасная кнопка (удаление и т.д.) */
   .btn-danger {
     @apply px-4 py-2 rounded-lg border font-medium 
-           transition-all duration-300 hover:scale-105 
-           backdrop-blur-sm;
-    background-color: rgba(41, 45, 47, 0.9);
-    border-color: rgba(120, 100, 100, 0.4);
-    color: #c08080;
+           transition-all duration-300 hover:scale-105 backdrop-blur-sm;
+    background-color: var(--btn-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-color);
   }
-  
   .btn-danger:hover {
-    background-color: rgba(50, 55, 57, 0.9);
-    border-color: rgba(140, 110, 110, 0.5);
-    color: #d09090;
+    background-color: var(--btn-bg-hover);
+    border-color: var(--danger-border-hover);
+    color: var(--danger-color-hover);
+  }
+
+  .btn-undo {
+    @apply px-4 py-2 rounded-lg border font-medium 
+           transition-all duration-300 hover:scale-105 backdrop-blur-sm;
+    background-color: var(--btn-bg);
+    border-color: var(--undo-border);
+    color: var(--undo-color);
+  }
+  .btn-undo:hover {
+    background-color: var(--btn-bg-hover);
+    color: var(--undo-color);
+  }
+
+  .card-surface {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .surface-solid {
+    background: var(--surface-solid);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-surface {
+    background: var(--surface-solid);
+    border-right: 1px solid var(--border);
   }
 }
 
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(to bottom right, #1a1d1f, #292d2f, #1f2224);
+  background: var(--bg-gradient);
+  transition: background 0.3s ease;
 }
 
-/* Стили для заголовков */
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Poppins', 'Inter', sans-serif;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
-/* Специальные классы для заголовков */
 .font-display {
   font-family: 'Poppins', sans-serif;
   font-weight: 700;
@@ -136,14 +207,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html, body, #root {
-  height: 100%;
-}
+html, body, #root { height: 100%; }

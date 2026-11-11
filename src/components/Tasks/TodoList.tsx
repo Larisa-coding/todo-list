@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { Todo } from '../../hooks/useTodos';
 import { useI18n } from '../../i18n';
@@ -9,16 +9,14 @@ type TodoListProps = {
   filter: TaskFilter;
   onAdd: (title: string) => void;
   onToggle: (id: string) => void;
+  onToggleUrgent: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (id: string, newTitle: string) => void;
-  onClearCompleted: () => void;
+  onClearCompleted: () => Todo[];
+  onRestoreTodos: (items: Todo[]) => void;
 };
 
-const cardStyle: React.CSSProperties = {
-  background: 'linear-gradient(135deg, rgba(41, 45, 47, 0.78), rgba(32, 35, 37, 0.78))',
-  border: '1px solid rgba(120, 120, 120, 0.3)',
-};
-
+const UNDO_SECONDS = 5;
 const MAX_LENGTH = 300;
 
 export const TodoList: React.FC<TodoListProps> = ({
@@ -26,9 +24,11 @@ export const TodoList: React.FC<TodoListProps> = ({
   filter,
   onAdd,
   onToggle,
+  onToggleUrgent,
   onDelete,
   onEdit,
   onClearCompleted,
+  onRestoreTodos,
 }) => {
   const { t } = useI18n();
   const [title, setTitle] = useState('');
@@ -36,13 +36,36 @@ export const TodoList: React.FC<TodoListProps> = ({
   const [editingValue, setEditingValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const visible = todos.filter((todo) => {
+  // Отмена удаления
+  const [undoItems, setUndoItems] = useState<Todo[] | null>(null);
+  const [undoSeconds, setUndoSeconds] = useState(0);
+  const undoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearUndoTimer = () => {
+    if (undoTimerRef.current) {
+      clearInterval(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => clearUndoTimer();
+  }, []);
+
+  // Сортировка: срочные вверх, потом по дате создания
+  const sorted = [...todos].sort((a, b) => {
+    if (a.urgent && !b.urgent) return -1;
+    if (!a.urgent && b.urgent) return 1;
+    return b.createdAt - a.createdAt;
+  });
+
+  const visible = sorted.filter((todo) => {
     if (filter === 'active') return !todo.completed;
     if (filter === 'done') return todo.completed;
     return true;
   });
 
-  const completedCount = todos.filter((todo) => todo.completed).length;
+  const completedCount = todos.filter((t) => t.completed).length;
   const activeCount = todos.length - completedCount;
   const progress = todos.length === 0 ? 0 : Math.round((completedCount / todos.length) * 100);
 
@@ -52,20 +75,41 @@ export const TodoList: React.FC<TodoListProps> = ({
     done: t('emptyDone'),
   }[filter];
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!title.trim()) return;
     onAdd(title);
     setTitle('');
     inputRef.current?.focus();
   };
 
-  const handleClearInput = () => {
-    setTitle('');
-    inputRef.current?.focus();
+  const handleClearCompleted = () => {
+    const removed = onClearCompleted();
+    if (removed.length === 0) return;
+    setUndoItems(removed);
+    setUndoSeconds(UNDO_SECONDS);
+    clearUndoTimer();
+    undoTimerRef.current = setInterval(() => {
+      setUndoSeconds((s) => {
+        if (s <= 1) {
+          clearUndoTimer();
+          setUndoItems(null);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
   };
 
-  // Редактирование задачи
+  const handleUndo = () => {
+    if (!undoItems) return;
+    clearUndoTimer();
+    onRestoreTodos(undoItems);
+    setUndoItems(null);
+    setUndoSeconds(0);
+  };
+
+  // Редактирование
   const startEditing = (todo: Todo) => {
     setEditingId(todo.id);
     setEditingValue(todo.title);
@@ -73,16 +117,11 @@ export const TodoList: React.FC<TodoListProps> = ({
 
   const commitEdit = (id: string) => {
     const trimmed = editingValue.trim();
-    if (trimmed) {
-      onEdit(id, trimmed);
-    }
+    if (trimmed) onEdit(id, trimmed);
     setEditingId(null);
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditingValue('');
-  };
+  const cancelEdit = () => setEditingId(null);
 
   const handleEditKeyDown = (e: React.KeyboardEvent, id: string) => {
     if (e.key === 'Enter') commitEdit(id);
@@ -91,27 +130,30 @@ export const TodoList: React.FC<TodoListProps> = ({
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
-      {/* Прогресс */}
-      <section className="rounded-2xl p-5 backdrop-blur-xl" style={cardStyle}>
+
+      {/* ── Прогресс ── */}
+      <section
+        className="rounded-2xl p-5 backdrop-blur-xl card-surface"
+      >
         <div className="flex items-end justify-between gap-4 mb-3">
           <div>
-            <p className="text-xs uppercase tracking-wider" style={{ color: '#8d8d8d' }}>
+            <p className="text-xs uppercase tracking-wider font-accent" style={{ color: 'var(--text-muted)' }}>
               {t('progress')}
             </p>
-            <p className="text-2xl font-display mt-1" style={{ color: '#d8d8d8' }}>
+            <p className="text-2xl font-display mt-1" style={{ color: 'var(--text-primary)' }}>
               {activeCount}{' '}
-              <span className="text-base font-accent" style={{ color: '#9a9a9a' }}>
+              <span className="text-base font-accent" style={{ color: 'var(--text-secondary)' }}>
                 {t('left')}
               </span>
             </p>
           </div>
-          <p className="text-sm" style={{ color: '#b0b0b0' }}>
+          <p className="text-sm font-accent" style={{ color: 'var(--text-secondary)' }}>
             {completedCount} / {todos.length}
           </p>
         </div>
         <div
           className="h-1.5 rounded-full overflow-hidden"
-          style={{ backgroundColor: 'rgba(20, 22, 24, 0.55)' }}
+          style={{ backgroundColor: 'var(--progress-track)' }}
           role="progressbar"
           aria-valuenow={progress}
           aria-valuemin={0}
@@ -120,16 +162,14 @@ export const TodoList: React.FC<TodoListProps> = ({
         >
           <div
             className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${progress}%`, backgroundColor: '#b7b7b7' }}
+            style={{ width: `${progress}%`, backgroundColor: 'var(--progress-bar)' }}
           />
         </div>
       </section>
 
-      {/* Форма добавления */}
+      {/* ── Форма добавления ── */}
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-        <label className="sr-only" htmlFor="new-task">
-          {t('addPlaceholder')}
-        </label>
+        <label className="sr-only" htmlFor="new-task">{t('addPlaceholder')}</label>
         <div className="relative flex-1">
           <input
             id="new-task"
@@ -138,34 +178,31 @@ export const TodoList: React.FC<TodoListProps> = ({
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('addPlaceholder')}
             maxLength={MAX_LENGTH}
-            className="w-full px-4 py-3 rounded-xl outline-none font-accent pr-16"
+            className="w-full px-4 py-3 rounded-xl outline-none font-accent pr-16 transition-colors duration-200"
             style={{
-              backgroundColor: 'rgba(26, 29, 31, 0.72)',
-              border: '1px solid rgba(120, 120, 120, 0.35)',
-              color: '#ececec',
+              backgroundColor: 'var(--surface-input)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-input)',
             }}
           />
-          {/* Счётчик символов + кнопка очистки */}
-          <div
-            className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5"
-            style={{ color: '#6a6a6a' }}
-          >
-            {title.length > 0 && (
-              <>
-                <span className="text-xs tabular-nums">
-                  {title.length}/{MAX_LENGTH}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleClearInput}
-                  aria-label="Очистить поле"
-                  className="p-0.5 rounded transition-opacity hover:opacity-80"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
-          </div>
+          {title.length > 0 && (
+            <div
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <span className="text-xs tabular-nums font-accent">
+                {title.length}/{MAX_LENGTH}
+              </span>
+              <button
+                type="button"
+                onClick={() => { setTitle(''); inputRef.current?.focus(); }}
+                aria-label="Очистить поле"
+                className="p-0.5 rounded transition-opacity hover:opacity-80"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
         <button
           type="submit"
@@ -176,18 +213,21 @@ export const TodoList: React.FC<TodoListProps> = ({
         </button>
       </form>
 
-      {/* Список задач */}
+      {/* ── Список задач ── */}
       {visible.length === 0 ? (
-        <div className="rounded-2xl px-6 py-14 text-center backdrop-blur-xl" style={cardStyle}>
-          <p style={{ color: '#a0a0a0' }}>{emptyText}</p>
+        <div className="rounded-2xl px-6 py-14 text-center backdrop-blur-xl card-surface">
+          <p style={{ color: 'var(--text-muted)' }}>{emptyText}</p>
         </div>
       ) : (
         <ul className="space-y-3" aria-label={t('taskList')}>
           {visible.map((todo) => (
             <li
               key={todo.id}
-              className="rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-xl animate-fade-in"
-              style={cardStyle}
+              className="rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-xl animate-fade-in transition-all duration-200 card-surface"
+              style={todo.urgent && !todo.completed ? {
+                borderColor: 'var(--urgent-color)',
+                backgroundColor: 'var(--urgent-bg)',
+              } : undefined}
             >
               {/* Чекбокс */}
               <button
@@ -197,9 +237,9 @@ export const TodoList: React.FC<TodoListProps> = ({
                 aria-pressed={todo.completed}
                 className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center transition-all duration-300"
                 style={{
-                  border: '1px solid rgba(176, 176, 176, 0.55)',
-                  backgroundColor: todo.completed ? 'rgba(192, 192, 192, 0.22)' : 'transparent',
-                  color: '#e8e8e8',
+                  border: '1px solid var(--border-hover)',
+                  backgroundColor: todo.completed ? 'var(--check-bg)' : 'transparent',
+                  color: 'var(--text-primary)',
                 }}
               >
                 {todo.completed && <Check className="w-4 h-4" />}
@@ -215,21 +255,34 @@ export const TodoList: React.FC<TodoListProps> = ({
                   onKeyDown={(e) => handleEditKeyDown(e, todo.id)}
                   className="flex-1 px-2 py-0.5 rounded-lg outline-none font-accent text-sm"
                   style={{
-                    backgroundColor: 'rgba(26, 29, 31, 0.72)',
-                    border: '1px solid rgba(120, 120, 120, 0.5)',
-                    color: '#ececec',
+                    backgroundColor: 'var(--surface-input)',
+                    border: '1px solid var(--border-hover)',
+                    color: 'var(--text-input)',
                   }}
                 />
               ) : (
                 <span
                   className="flex-1 font-accent break-words cursor-pointer select-none"
                   style={{
-                    color: todo.completed ? '#8a8a8a' : '#e4e4e4',
+                    color: todo.completed ? 'var(--text-done)' : 'var(--text-primary)',
                     textDecoration: todo.completed ? 'line-through' : 'none',
                   }}
                   onDoubleClick={() => !todo.completed && startEditing(todo)}
                   title={!todo.completed ? t('editHint') : undefined}
                 >
+                  {/* Флажок срочно */}
+                  {todo.urgent && !todo.completed && (
+                    <span
+                      className="inline-block text-xs font-accent mr-2 px-1.5 py-0.5 rounded-md align-middle"
+                      style={{
+                        color: 'var(--urgent-color)',
+                        border: '1px solid var(--urgent-color)',
+                        opacity: 0.85,
+                      }}
+                    >
+                      {t('urgent')}
+                    </span>
+                  )}
                   {todo.title}
                 </span>
               )}
@@ -237,6 +290,21 @@ export const TodoList: React.FC<TodoListProps> = ({
               {/* Кнопки действий */}
               {editingId !== todo.id && (
                 <div className="flex items-center gap-1 shrink-0">
+                  {/* Кнопка срочно */}
+                  {!todo.completed && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleUrgent(todo.id)}
+                      aria-label={todo.urgent ? t('unmarkUrgent') : t('markUrgent')}
+                      aria-pressed={todo.urgent}
+                      className="btn-icon text-sm leading-none"
+                      style={todo.urgent ? { color: 'var(--urgent-color)', borderColor: 'var(--urgent-color)' } : undefined}
+                      title={todo.urgent ? t('unmarkUrgent') : t('markUrgent')}
+                    >
+                      🔴
+                    </button>
+                  )}
+                  {/* Редактировать */}
                   {!todo.completed && (
                     <button
                       type="button"
@@ -247,6 +315,7 @@ export const TodoList: React.FC<TodoListProps> = ({
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                   )}
+                  {/* Удалить */}
                   <button
                     type="button"
                     onClick={() => onDelete(todo.id)}
@@ -262,12 +331,23 @@ export const TodoList: React.FC<TodoListProps> = ({
         </ul>
       )}
 
-      {/* Очистить выполненные */}
+      {/* ── Убрать выполненные / Отменить ── */}
       {completedCount > 0 && (
-        <div className="flex justify-end">
-          <button type="button" onClick={onClearCompleted} className="btn-danger text-sm">
-            {t('clearDone')}
-          </button>
+        <div className="flex justify-end items-center gap-3">
+          {undoItems ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-accent" style={{ color: 'var(--text-muted)' }}>
+                {undoSeconds}s
+              </span>
+              <button type="button" onClick={handleUndo} className="btn-undo text-sm">
+                ↩ {t('undoClear')}
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={handleClearCompleted} className="btn-danger text-sm">
+              {t('clearDone')}
+            </button>
+          )}
         </div>
       )}
     </div>

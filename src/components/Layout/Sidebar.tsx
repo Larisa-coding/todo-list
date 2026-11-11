@@ -37,39 +37,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {isOpen && (
         <div
           className="fixed inset-0 z-40 lg:hidden backdrop-blur-sm"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
           onClick={onClose}
         />
       )}
 
       <aside
         className={`
-          fixed top-0 left-0 h-full w-80 shadow-lg transform transition-transform duration-300 ease-in-out z-50 backdrop-blur-xl
+          fixed top-0 left-0 h-full w-80 shadow-lg transform transition-transform duration-300 ease-in-out z-50 backdrop-blur-xl sidebar-surface
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0 lg:static lg:shadow-none lg:w-64
         `}
-        style={{
-          background: 'linear-gradient(135deg, rgba(41, 45, 47, 0.95), rgba(35, 39, 41, 0.95))',
-          borderRight: '1px solid rgba(120, 120, 120, 0.3)',
-        }}
       >
         <div className="p-6">
           <div className="flex items-center space-x-3 mb-8">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-lg"
               style={{
-                background: 'linear-gradient(135deg, rgba(41, 45, 47, 0.9), rgba(35, 39, 41, 0.9))',
-                border: '2px solid rgba(120, 120, 120, 0.4)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                background: 'var(--surface)',
+                border: '2px solid var(--border)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
-              <CheckSquare className="w-7 h-7" style={{ color: '#d0d0d0' }} />
+              <CheckSquare className="w-7 h-7" style={{ color: 'var(--brand-color)' }} />
             </div>
             <div>
-              <h2 className="text-xl font-display leading-tight" style={{ color: '#c0c0c0' }}>
+              <h2 className="text-xl font-display leading-tight" style={{ color: 'var(--text-primary)' }}>
                 {t('brand')}
               </h2>
-              <p className="text-xs mt-1" style={{ color: '#8d8d8d' }}>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                 {t('tagline')}
               </p>
             </div>
@@ -88,9 +84,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   aria-current={isActive ? 'page' : undefined}
                   className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-all duration-300"
                   style={{
-                    backgroundColor: isActive ? 'rgba(80, 80, 80, 0.3)' : 'transparent',
-                    borderRight: isActive ? '3px solid #c0c0c0' : '3px solid transparent',
-                    color: isActive ? '#d0d0d0' : '#b0b0b0',
+                    backgroundColor: isActive ? 'var(--active-nav-bg)' : 'transparent',
+                    borderRight: isActive
+                      ? '3px solid var(--active-nav-border)'
+                      : '3px solid transparent',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                   }}
                 >
                   <span className="flex items-center space-x-3">
@@ -98,10 +96,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span className="font-accent font-medium">{t(item.label)}</span>
                   </span>
                   <span
-                    className="text-xs px-2 py-0.5 rounded-full"
+                    className="text-xs px-2 py-0.5 rounded-full font-accent"
                     style={{
-                      backgroundColor: 'rgba(20, 22, 24, 0.45)',
-                      color: '#c0c0c0',
+                      backgroundColor: 'var(--pill-bg)',
+                      color: 'var(--pill-color)',
                     }}
                   >
                     {counts[item.id]}

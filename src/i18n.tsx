@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 export type Lang = 'ru' | 'en';
 
 const LANG_KEY = 'task-list-lang';
+export const THEME_KEY = 'task-list-theme';
+export type Theme = 'dark' | 'light';
 
 const STRINGS = {
   ru: {
@@ -26,11 +28,16 @@ const STRINGS = {
     toggleUndo: 'Вернуть в активные',
     left: 'осталось',
     clearDone: 'Убрать выполненные',
+    undoClear: 'Отменить',
     menu: 'Открыть меню',
     closeMenu: 'Закрыть меню',
     total: 'Всего',
     progress: 'Прогресс',
     taskList: 'Список задач',
+    urgent: 'Срочно',
+    markUrgent: 'Пометить как срочное',
+    unmarkUrgent: 'Снять пометку срочно',
+    toggleTheme: 'Сменить тему',
   },
   en: {
     brand: 'Task list',
@@ -53,11 +60,16 @@ const STRINGS = {
     toggleUndo: 'Mark as active',
     left: 'left',
     clearDone: 'Clear completed',
+    undoClear: 'Undo',
     menu: 'Open menu',
     closeMenu: 'Close menu',
     total: 'Total',
     progress: 'Progress',
     taskList: 'Task list',
+    urgent: 'Urgent',
+    markUrgent: 'Mark as urgent',
+    unmarkUrgent: 'Remove urgent mark',
+    toggleTheme: 'Toggle theme',
   },
 } as const;
 
@@ -67,6 +79,8 @@ type LanguageContextValue = {
   lang: Lang;
   setLang: (lang: Lang) => void;
   t: (key: CopyKey) => string;
+  theme: Theme;
+  toggleTheme: () => void;
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -80,16 +94,28 @@ const readLang = (): Lang => {
   }
 };
 
+const readTheme = (): Theme => {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    return stored === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+};
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [lang, setLangState] = useState<Lang>(readLang);
+  const [theme, setThemeState] = useState<Theme>(readTheme);
 
   const setLang = (next: Lang) => {
     setLangState(next);
-    try {
-      localStorage.setItem(LANG_KEY, next);
-    } catch {
-      // Language still switches for this session if storage is blocked.
-    }
+    try { localStorage.setItem(LANG_KEY, next); } catch {}
+  };
+
+  const toggleTheme = () => {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    setThemeState(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch {}
   };
 
   useEffect(() => {
@@ -97,13 +123,14 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     document.title = STRINGS[lang].brand;
   }, [lang]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   const value = useMemo<LanguageContextValue>(
-    () => ({
-      lang,
-      setLang,
-      t: (key) => STRINGS[lang][key],
-    }),
-    [lang]
+    () => ({ lang, setLang, t: (key) => STRINGS[lang][key], theme, toggleTheme }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lang, theme]
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
@@ -111,8 +138,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
 export const useI18n = () => {
   const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useI18n must be used within LanguageProvider');
-  }
+  if (!context) throw new Error('useI18n must be used within LanguageProvider');
   return context;
 };

@@ -4,6 +4,7 @@ export type Todo = {
   id: string;
   title: string;
   completed: boolean;
+  urgent: boolean;
   createdAt: number;
 };
 
@@ -11,7 +12,7 @@ const STORAGE_KEY = 'task-list-items-v1';
 
 const isTodo = (value: unknown): value is Todo => {
   if (!value || typeof value !== 'object') return false;
-  const todo = value as Todo;
+  const todo = value as Record<string, unknown>;
   return (
     typeof todo.id === 'string' &&
     typeof todo.title === 'string' &&
@@ -20,13 +21,21 @@ const isTodo = (value: unknown): value is Todo => {
   );
 };
 
+const normalizeTodo = (raw: Record<string, unknown>): Todo => ({
+  id: raw.id as string,
+  title: raw.title as string,
+  completed: raw.completed as boolean,
+  urgent: typeof raw.urgent === 'boolean' ? raw.urgent : false,
+  createdAt: raw.createdAt as number,
+});
+
 const readTodos = (): Todo[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isTodo);
+    return parsed.filter(isTodo).map(normalizeTodo);
   } catch {
     return [];
   }
@@ -38,22 +47,19 @@ export const useTodos = () => {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-    } catch {
-      // Keep the in-memory list if storage is unavailable.
-    }
+    } catch {}
   }, [todos]);
 
   const addTodo = (title: string) => {
     const trimmed = title.trim();
     if (!trimmed) return;
-
     const next: Todo = {
       id: crypto.randomUUID(),
       title: trimmed.slice(0, 300),
       completed: false,
+      urgent: false,
       createdAt: Date.now(),
     };
-
     setTodos((current) => [next, ...current]);
   };
 
@@ -61,6 +67,14 @@ export const useTodos = () => {
     setTodos((current) =>
       current.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
+  };
+
+  const toggleUrgent = (id: string) => {
+    setTodos((current) =>
+      current.map((todo) =>
+        todo.id === id ? { ...todo, urgent: !todo.urgent } : todo
       )
     );
   };
@@ -79,9 +93,15 @@ export const useTodos = () => {
     );
   };
 
-  const clearCompleted = () => {
+  const clearCompleted = (): Todo[] => {
+    const removed = todos.filter((todo) => todo.completed);
     setTodos((current) => current.filter((todo) => !todo.completed));
+    return removed;
   };
 
-  return { todos, addTodo, toggleTodo, deleteTodo, editTodo, clearCompleted };
+  const restoreTodos = (items: Todo[]) => {
+    setTodos((current) => [...current, ...items]);
+  };
+
+  return { todos, addTodo, toggleTodo, toggleUrgent, deleteTodo, editTodo, clearCompleted, restoreTodos };
 };

@@ -13,7 +13,16 @@ const pageTitle: Record<TaskFilter, 'pageAll' | 'pageActive' | 'pageDone'> = {
 
 const AppShell: React.FC = () => {
   const { t } = useI18n();
-  const { todos, addTodo, toggleTodo, deleteTodo, editTodo, clearCompleted } = useTodos();
+  const {
+    todos,
+    addTodo,
+    toggleTodo,
+    toggleUrgent,
+    deleteTodo,
+    editTodo,
+    clearCompleted,
+    restoreTodos,
+  } = useTodos();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [filter, setFilter] = useState<TaskFilter>('all');
 
@@ -24,10 +33,7 @@ const AppShell: React.FC = () => {
   };
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: 'linear-gradient(to bottom right, #1a1d1f, #292d2f, #1f2224)' }}
-    >
+    <div className="min-h-screen" style={{ background: 'var(--bg-gradient)' }}>
       <div className="flex min-h-screen">
         <Sidebar
           isOpen={sidebarOpen}
@@ -45,9 +51,11 @@ const AppShell: React.FC = () => {
               filter={filter}
               onAdd={addTodo}
               onToggle={toggleTodo}
+              onToggleUrgent={toggleUrgent}
               onDelete={deleteTodo}
               onEdit={editTodo}
               onClearCompleted={clearCompleted}
+              onRestoreTodos={restoreTodos}
             />
           </main>
         </div>
